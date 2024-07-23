@@ -1,0 +1,62 @@
+﻿using BookShop.Data;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+namespace BookShop.Controllers
+{
+    [Authorize]
+
+    public class StoreController : Controller
+    {
+        private readonly BookShopContext _context;
+
+        public StoreController(BookShopContext bookShopContext)
+        {
+            this._context = bookShopContext;
+        }
+
+        // GET: Books
+        [AllowAnonymous]
+        public async Task<IActionResult> Index(string searchString, string minPrice, string maxPrice)
+        {
+            var books = _context.Book.Select(b => b);
+
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                books = books.Where(b => b.Title.Contains(searchString) || b.Author.Contains(searchString));
+            }
+
+            if (!string.IsNullOrEmpty(minPrice))
+            {
+                var min = int.Parse(minPrice);
+                books = books.Where(b => b.Price >= min);
+            }
+
+            if (!string.IsNullOrEmpty(maxPrice))
+            {
+                var max = int.Parse(maxPrice);
+                books = books.Where(b => b.Price <= max);
+            }
+
+            return View(await books.ToListAsync());
+        }
+        // GET: Books/Details/5
+        public async Task<IActionResult> Details(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var book = await _context.Book
+                .FirstOrDefaultAsync(m => m.Id == id);
+            if (book == null)
+            {
+                return NotFound();
+            }
+
+            return View(book);
+        }
+    }
+}
